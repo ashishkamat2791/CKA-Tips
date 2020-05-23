@@ -25,7 +25,7 @@ alias kdn=”kubectl describe node”
 
 **Generate pod yaml with below command**
 ```
-kubectl run — generator=run-pod/v1 nginx — image=nginx -o yaml — dry-run > nginx.yaml
+kubectl run — generator=run-pod/v1 nginx — image=busybox --command sleep 3600 -o yaml — dry-run > nginx.yaml
 ```
 **Generate deployment yaml with below command**
 ```
@@ -38,7 +38,35 @@ kubectl expose pod hello-world — type=NodePort — name=example-service
 
 kubectl expose deployment hello-world — type=NodePort — name=example-service
 ```
+**create role**
+```
+kubectl create role developer --resource=pods --verb=create,list,get,update,delete --namespace=development
+```
+**create role-binding**
+```
+kubectl create rolebinding developer-role-binding --role=developer --user=ash --namespace=development
+```
 
+**create config-map**
+
+```
+kubectl create configmap --from-literal=<key>=<value>
+```
+
+**create secrets**
+```
+kubectl create secrets generic my-secret --from-literal=<key>=<value>
+**create cron-job**
+```
+**create cronjob**
+```
+kubectl create cronjob my-cron --image=busybox  --schedule="*/5 * * * *"
+```
+**create docker-regisrty-secret**
+```
+kubectl create secret docker-registry private-reg-cred --docker-username=dock_user --docker-password=dock_password --docker-server=myprivateregistry.com:5000 --docker-email=dock_user@myprivateregistry.com
+secret/private-reg-cred created
+```
 ### Trick 2 : Resuse existing
 ```
 cp pod1.ymal pod2.yaml
@@ -101,6 +129,8 @@ ETCDCTL_API=3 etcdctl — endpoints $ENDPOINT snapshot save snapshotdb
 ```
 * run “ETCDCTL_API=3 etcdctl help” 
 
+
+
 ### Tip 3 Finding values
 
 1. Exam cluster setup is done with kubeadm, this means ETCD used by the kubernetes cluster is coming from static pod. Confirm this by looking into pods in kube-system namespace.
@@ -119,3 +149,63 @@ You can locate the information on
 * server certificate : — cert-file=/etc/kubernetes/pki/etcd/server.crt
 * key: — key-file=/etc/kubernetes/pki/etcd/server.key
 
+**Eg**
+#### create snapshot and store to file
+```
+ETCDCTL_API=3 etcdctl --endpoints=https://127.0.0.1:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt --cert=/etc/kubernetes/pki/etcd/peer.crt --key=/etc/kubernetes/pki/etcd/peer.key snapshot status /tmp/etcd-backup.db
+```
+
+## Cluster upgrade form 1.16 to 1.17 or 1.17 to 1.18
+
+**Eg: From 1.16.0 to 1.17.0**
+### On Master
+```
+apt-mark unhold kubeadm && \
+apt-get update && apt-get install -y kubeadm=1.17.0-00 && \
+apt-mark hold kubeadm
+```
+choose the apporopriate kubeadm upgeade plan
+```
+ sudo kubeadm upgrade apply v1.17.0
+ ```
+ update kubelet kubectl and restart kubelet service
+ ```
+apt-mark unhold kubelet kubectl && \
+apt-get update && apt-get install -y kubelet=1.17.0-00 kubectl=1.17.0-00 && \
+ apt-mark hold kubelet kubectl
+sudo systemctl restart kubelet
+```
+
+### On Nodes
+```
+apt-mark unhold kubeadm && \
+apt-get update && apt-get install -y kubeadm=1.17.0-00 && \
+apt-mark hold kubeadm
+```
+
+update kubelet, kubectl and restart it
+
+```
+apt-mark unhold kubelet kubectl && \
+apt-get update && apt-get install -y kubelet=1.17.0-00 kubectl=1.17.0-00 && \
+apt-mark hold kubelet kubectl
+sudo systemctl restart kubelet
+```
+
+## Miscellenious
+
+### vi terminal 
+```
+dd: delete current line
+`n`dd: delete all 'n' lines from current
+       Eg: 4dd - delete all 4 lines
+:set nu : Enable numbering
+: set paste: paste buffered/copied data to terminal
+```
+
+## networking commands
+```
+nslookup: to probe dns and find 
+nc : to test connectivity
+ping 
+``
